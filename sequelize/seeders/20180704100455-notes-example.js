@@ -26,47 +26,17 @@ const notesSchema = {
   
   type Meme {
     _id: ID! @isUnique
-    ownerId: ID!
-    createdOn: String!
-    photoUrl: String!
-    comments: [Comment!]!
-  }
-  
-  type Like {
-    _id: ID! @isUnique
-    ownerId: ID!
-    memeId: ID!
-  }
-  
-  type Comment {
-    _id: ID! @isUnique
-    ownerId: ID!
-    meme: Meme!
-    createdOn: String!
-    updatedOn: String!
-    comment: String!
   }
   
   type Query {
     allProfiles:[Profile!]!
     profile(email: String!):Profile!
-    usersMemes(email: String!): [Meme!]!
-    feed(memeListId: ID!): [Meme!]!
-    meme(memeId: ID!):Meme
   }
   
   type Mutation {
     createProfile(email: String!, display_name: String!, biography: String!, pictureUrl: String!):Profile!
-    updateProfile(id: ID!, email: String!, display_name: String!, biography: String!, pictureUrl: String!):Int!
-    deleteProfile(id: ID!):Int!
-  
-    postMeme(picture: [Int!]!, topComment: String!, bottomComment: String!, memeListId: ID!): Meme!
-    deleteMeme(id: ID!): Meme!
-    likeMeme(id: ID!): Meme!
-    unlikeMeme(id: ID!): Meme!
-  
-    postComment(memeId: ID!, comment: String!): Meme!
-    deleteComment(id: ID!): Meme!
+    updateProfile(id: ID!, email: String!, display_name: String!, biography: String!, pictureUrl: String!):Profile!
+    deleteProfile(id: ID!):Boolean!
   }
   
   type Subscription {
