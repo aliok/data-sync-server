@@ -15,41 +15,63 @@ const datasources = [
 const notesSchema = {
   schema: `
   
-  schema {
-    query: Query
-    mutation: Mutation
-    subscription: Subscription
-  }
-
-  # The query type, represents all of the entry points into our object graph
-  type Query {
-    allMemes(orderBy: MemeOrderBy): [Meme]
-  }
-
-  # The mutation type, represents all updates we can make to our data
-  type Mutation {
-    createMeme(photoUrl: String!): Meme    
-  }
-  
-  type Subscription {
-    _:Boolean
+  type Profile {
+    _id: ID! @isUnique
+    email: String! @isUnique
+    display_name: String!
+    biography: String!
+    pictureUrl: String!
+    memes: [Meme]!
   }
   
   type Meme {
     _id: ID! @isUnique
+    ownerId: ID!
+    createdOn: String!
     photoUrl: String!
-    votes: Int
+    comments: [Comment!]!
   }
   
-  enum MemeOrderBy {
-    id_ASC
-    id_DESC
-    photoUrl_ASC
-    photoUrl_DESC
-    votes_ASC
-    votes_DESC
+  type Like {
+    _id: ID! @isUnique
+    ownerId: ID!
+    memeId: ID!
   }
   
+  type Comment {
+    _id: ID! @isUnique
+    ownerId: ID!
+    meme: Meme!
+    createdOn: String!
+    updatedOn: String!
+    comment: String!
+  }
+  
+  type Query {
+    allProfiles:[Profile!]!
+    profile(email: String!):Profile!
+    usersMemes(email: String!): [Meme!]!
+    feed(memeListId: ID!): [Meme!]!
+    meme(memeId: ID!):Meme
+  }
+  
+  type Mutation {
+    createProfile(email: String!, display_name: String!, biography: String!, pictureUrl: String!):Profile!
+    updateProfile(id: ID!, email: String!, display_name: String!, biography: String!, pictureUrl: String!):Int!
+    deleteProfile(id: ID!):Int!
+  
+    postMeme(picture: [Int!]!, topComment: String!, bottomComment: String!, memeListId: ID!): Meme!
+    deleteMeme(id: ID!): Meme!
+    likeMeme(id: ID!): Meme!
+    unlikeMeme(id: ID!): Meme!
+  
+    postComment(memeId: ID!, comment: String!): Meme!
+    deleteComment(id: ID!): Meme!
+  }
+  
+  type Subscription {
+    _: Boolean
+  }
   `,
   createdAt: time,
   updatedAt: time
@@ -58,18 +80,69 @@ const notesSchema = {
 const resolvers = [
   {
     type: 'Query',
-    field: 'allMemes',
+    field: 'allProfiles',
     DataSourceId: 1,
-    requestMapping: '{"operation": "find","query": {}}',
+    requestMapping: '{"operation": "find", "query": {"_type":"profile"}}',
+    responseMapping: '{{toJSON context.result}}',
+    createdAt: time,
+    updatedAt: time
+  },
+  {
+    type: 'Query',
+    field: 'profile',
+    DataSourceId: 1,
+    requestMapping: '{"operation": "findOne","query": {"_type":"profile", "email": "{{context.arguments.email}}" }}',
     responseMapping: '{{toJSON context.result}}',
     createdAt: time,
     updatedAt: time
   },
   {
     type: 'Mutation',
-    field: 'createMeme',
+    field: 'createProfile',
     DataSourceId: 1,
-    requestMapping: '{"operation": "insert","doc": {"photoUrl": "{{context.arguments.photoUrl}}","votes": "{{context.arguments.votes}}"}}',
+    requestMapping: `{
+      "operation": "insert",
+      "doc": {
+        "_type":"profile", 
+        "email": "{{context.arguments.email}}",
+        "display_name": "{{context.arguments.display_name}}", 
+        "biography": "{{context.arguments.biography}}",    
+        "pictureUrl": "{{context.arguments.pictureUrl}}",
+        "memes": []    
+      }
+    }`,
+    responseMapping: '{{toJSON context.result}}',
+    createdAt: time,
+    updatedAt: time
+  },
+  {
+    type: 'Mutation',
+    field: 'updateProfile',
+    DataSourceId: 1,
+    requestMapping: `{
+      "operation": "update",
+      "query": {"_type":"profile", "_id": "{{context.arguments.id}}" },
+      "update": { 
+        "$set": {
+          "email": "{{context.arguments.email}}",
+          "display_name": "{{context.arguments.display_name}}", 
+          "biography": "{{context.arguments.biography}}",    
+          "pictureUrl": "{{context.arguments.pictureUrl}}"
+        }    
+      }
+    }`,
+    responseMapping: '{{toJSON context.result}}',
+    createdAt: time,
+    updatedAt: time
+  },
+  {
+    type: 'Mutation',
+    field: 'deleteProfile',
+    DataSourceId: 1,
+    requestMapping: `{
+      "operation": "remove",
+      "query": {"_type":"profile", "_id": "{{context.arguments.id}}" }
+    }`,
     responseMapping: '{{toJSON context.result}}',
     createdAt: time,
     updatedAt: time
